@@ -11,21 +11,14 @@ namespace upc {
   void PitchAnalyzer::autocorrelation(const vector<float> &x, vector<float> &r) const {
 
     for (unsigned int l = 0; l < r.size(); ++l) {
-  		/// \TODO Compute the autocorrelation r[l]
-      r[l] = 0.0F;
+  		 /// \TODO Compute the autocorrelation r[l]
+       /// autocorrelación sesgada
+        r[l] = 0.0f;
       for (unsigned int n = 0; n < x.size() - l; ++n) {
-        r[l] += x[n] * x[n + l];
+        r[l] += x[n] * x[n+l];
       }
-      /**
-      \DONE Autocorrelation implementada
-      \f[
-      r[l] = \sum_{n=0}^{N-l} x[n]  x[n+l]
-      \f]
-      */
+    r[l] /= x.size();//normalización.
     }
-
-    if (r[0] == 0.0F) //to avoid log() and divide zero 
-      r[0] = 1e-10; 
   }
 
   void PitchAnalyzer::set_window(Window win_type) {
