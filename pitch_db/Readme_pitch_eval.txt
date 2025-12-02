@@ -3,7 +3,7 @@
 Evaluación de la Detección de Pitch (F0)
 
 Antonio Bonafonte
-UPC, Barcelona, Barseloca
+UPC, Barcelona, 
 2016
 ---------------------------------------------------------------------
 
