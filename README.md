@@ -1,6 +1,8 @@
 PAV - P3: estimación de pitch
 =============================
 
+Enric Mayné Cusell e Íñigo Michelena Mayorgas
+
 Esta práctica se distribuye a través del repositorio GitHub [Práctica 3](https://github.com/albino-pav/P3).
 Siga las instrucciones de la [Práctica 2](https://github.com/albino-pav/P2) para realizar un `fork` de la
 misma y distribuir copias locales (*clones*) del mismo a los distintos integrantes del grupo de prácticas.
@@ -14,6 +16,36 @@ Ejercicios básicos
   `get_pitch`.
 
    * Complete el cálculo de la autocorrelación e inserte a continuación el código correspondiente.
+
+```cpp
+  void PitchAnalyzer::autocorrelation(const vector<float> &x, vector<float> &r) const {
+
+    // Recorremos todos los retardos l (lags) para calcular r[l]
+    for (unsigned int l = 0; l < r.size(); ++l) {
+
+    // Inicializamos el valor de la autocorrelación para este retardo
+    r[l] = 0.0f;
+
+    // Sumatorio de la autocorrelación sesgada:
+    // r_xx[l] = (1/N) * sum_{n=0}^{N-l-1} x[n] * x[n+l]
+    //
+    // Recorremos todas las posiciones donde x[n+l] sigue siendo válido.
+    for (unsigned int n = 0; n < x.size() - l; ++n) {
+      r[l] += x[n] * x[n + l];
+    }
+
+    // Normalización sesgada (dividir por N). Esto evita que r disminuya
+    // de amplitud para retardos grandes, manteniendo coherencia entre lags.
+    r[l] /= x.size();
+    }
+
+    // r[0] debería ser la energía total de la señal.
+    // Si por algún motivo es cero, evitamos problemas con operaciones posteriores
+    // como log(), divisiones, etc.
+    if (r[0] == 0.0F)
+      r[0] = 1e-10; 
+  }
+```
 
    * Inserte una gŕafica donde, en un *subplot*, se vea con claridad la señal temporal de un segmento de
      unos 30 ms de un fonema sonoro y su periodo de pitch; y, en otro *subplot*, se vea con claridad la
