@@ -49,16 +49,25 @@ namespace upc {
       npitch_max = frameLen/2;
   }
 
-  bool PitchAnalyzer::unvoiced(float pot, float r1norm, float rmaxnorm) const {
-    /// \TODO Implement a rule to decide whether the sound is voiced or not.
-    /// * You can use the standard features (pot, r1norm, rmaxnorm),
-    ///   or compute and use other ones.
+  bool PitchAnalyzer::unvoiced(float pot,
+                             float r1norm,
+                             float rmaxnorm,
+                             float zcr) const {
+    // Umbrales para decisión voiced/unvoiced
+    const float pot_threshold     = -40.0f;
+    const float r1_threshold      = 0.2f;
+    const float rmax_threshold    = 0.4f;
+    const float zcr_threshold     = 0.15f;
 
-    if(rmaxnorm > this->umaxnorm)
-      return false;
-    else
-    return true;
-  }
+    const bool low_power      = (pot < pot_threshold);
+    const bool low_r1         = (r1norm < r1_threshold);
+    const bool low_rmax       = (rmaxnorm < rmax_threshold);
+    const bool high_zcr       = (zcr > zcr_threshold);
+
+    // true = unvoiced, false = voiced
+    return (low_power || low_r1 || low_rmax || high_zcr);
+}
+
 
   float PitchAnalyzer::compute_pitch(std::vector<float> &x) const {
     if (x.size() != frameLen)
