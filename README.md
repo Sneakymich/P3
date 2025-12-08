@@ -22,23 +22,18 @@ Ejercicios básicos
 
     // Recorremos todos los retardos l (lags) para calcular r[l]
     for (unsigned int l = 0; l < r.size(); ++l) {
-
-    // Inicializamos el valor de la autocorrelación para este retardo
-    r[l] = 0.0f;
-
-    // Sumatorio de la autocorrelación sesgada:
-    // r_xx[l] = (1/N) * sum_{n=0}^{N-l-1} x[n] * x[n+l]
-    //
-    // Recorremos todas las posiciones donde x[n+l] sigue siendo válido.
-    for (unsigned int n = 0; n < x.size() - l; ++n) {
-      r[l] += x[n] * x[n + l];
+      // Inicializamos el valor de la autocorrelación para este retardo
+      r[l] = 0.0f;
+      // Sumatorio de la autocorrelación sesgada:
+      r_xx[l] = (1/N) * sum_{n=0}^{N-l-1} x[n] * x[n+l];
+      //Recorremos todas las posiciones donde x[n+l] sigue siendo válido.
+      for (unsigned int n = 0; n < x.size() - l; ++n) {
+        r[l] += x[n] * x[n + l];
+      }
+      // Normalización sesgada (dividir por N). Esto evita que r disminuya
+      // de amplitud para retardos grandes, manteniendo coherencia entre lags.
+      r[l] /= x.size();
     }
-
-    // Normalización sesgada (dividir por N). Esto evita que r disminuya
-    // de amplitud para retardos grandes, manteniendo coherencia entre lags.
-    r[l] /= x.size();
-    }
-
     // r[0] debería ser la energía total de la señal.
     // Si por algún motivo es cero, evitamos problemas con operaciones posteriores
     // como log(), divisiones, etc.
