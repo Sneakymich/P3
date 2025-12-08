@@ -49,59 +49,64 @@ namespace upc {
       npitch_max = frameLen/2;
   }
 
-  bool PitchAnalyzer::unvoiced(float pot, float r1norm, float rmaxnorm) const {
-    /// \TODO Implement a rule to decide whether the sound is voiced or not.
-    /// * You can use the standard features (pot, r1norm, rmaxnorm),
-    ///   or compute and use other ones.
+  bool PitchAnalyzer::unvoiced(float pot,
+                             float r1norm,
+                             float rmaxnorm,
+                             float zcr) const {
+    // Umbrales para decisión voiced/unvoiced
+    const float pot_threshold     = -40.0f;
+    const float r1_threshold      = 0.2f;
+    const float rmax_threshold    = 0.4f;
+    const float zcr_threshold     = 0.15f;
 
-    if(rmaxnorm > this->umaxnorm)
-      return false;
-    else
-    return true;
-  }
+    const bool low_power      = (pot < pot_threshold);
+    const bool low_r1         = (r1norm < r1_threshold);
+    const bool low_rmax       = (rmaxnorm < rmax_threshold);
+    const bool high_zcr       = (zcr > zcr_threshold);
 
-  float PitchAnalyzer::compute_pitch(vector<float> & x) const {
+    // true = unvoiced, false = voiced
+    return (low_power || low_r1 || low_rmax || high_zcr);
+}
+
+
+  float PitchAnalyzer::compute_pitch(std::vector<float> &x) const {
     if (x.size() != frameLen)
-      return -1.0F;
+        return -1.0F;
 
-    //Window input frame
-    for (unsigned int i=0; i<x.size(); ++i)
-      x[i] *= window[i];
+    // Ventaneado
+    for (unsigned int i = 0; i < x.size(); ++i)
+        x[i] *= window[i];
 
-    vector<float> r(npitch_max);
-
-    //Compute correlation
+    // Autocorrelación en [0, npitch_max)
+    std::vector<float> r(npitch_max);
     autocorrelation(x, r);
 
-    vector<float>::const_iterator iR = r.begin(), iRMax = iR + npitch_min;
+    // Búsqueda del primer máximo secundario en [npitch_min, npitch_max)
+    unsigned int lag = npitch_min;
+    float max_corr = r[npitch_min];   // r[0] no nos interesa
 
-    /// \TODO 
-	/// Find the lag of the maximum value of the autocorrelation away from the origin.<br>
-	/// Choices to set the minimum value of the lag are:
-	///    - The first negative value of the autocorrelation.
-	///    - The lag corresponding to the maximum value of the pitch.
-    ///	   .
-	/// In either case, the lag should not exceed that of the minimum value of the pitch.
+    for (unsigned int i = npitch_min; i < npitch_max; ++i) {
+        if (r[i] > max_corr) {
+            max_corr = r[i];
+            lag = i;
+        }
+    }
 
-    vector<float>::const_iterator iRStart = r.begin() + npitch_min;
-    vector<float>::const_iterator iREnd = r.end();
+    // Potencia (en dB) y ZCR para decisión voiced/unvoiced
+    float pot = 10.0F * std::log10(r[0]);
+    float zcr = 0.0F;
+    for (size_t i = 1; i < x.size(); ++i) {
+        if ((x[i - 1] >= 0.0F && x[i] < 0.0F) || (x[i - 1] < 0.0F && x[i] >= 0.0F))
+            zcr += 1.0F;
+    }
+    zcr /= static_cast<float>(x.size());
 
-    iRMax = max_element(iRStart, iREnd); // Asignar, no sredeclarar
+    // Decisión no sonora o lag inválido
+    if (unvoiced(pot, r[1] / r[0], r[lag] / r[0], zcr) || lag == 0)
+        return 0.0F;
 
-    unsigned int lag = iRMax - r.begin();
-    float pot = 10 * log10(r[0]);
+    // Pitch (Hz)
+    return static_cast<float>(samplingFreq) / static_cast<float>(lag);
+}
 
-    //You can print these (and other) features, look at them using wavesurfer
-    //Based on that, implement a rule for unvoiced
-    //change to #if 1 and compile
-#if 0
-    if (r[0] > 0.0F)
-      cout << pot << '\t' << r[1]/r[0] << '\t' << r[lag]/r[0] << endl;
-#endif
-    
-    if (unvoiced(pot, r[1]/r[0], r[lag]/r[0]))
-      return 0;
-    else
-      return (float) samplingFreq/(float) lag;
-  }
 }
